@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereal Light Floating Background - Three.js</title>
+    <!-- Tailwind CSS (前景コンテンツのレイアウト・スタイリング用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter & Noto Sans JP) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Three.js CDN (r128) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 antialiased selection:bg-sky-200 selection:text-sky-900 overflow-x-hidden font-['Inter','Noto_Sans_JP',sans-serif]">
+
+    <!-- 
+      ========================================================================
+      1. 背景用 Three.js キャンバスコンテナ
+      fixed と inset-0 で画面全体に固定し、-z-10 で背面に配置します。
+      オフホワイト〜淡いスカイブルー・ラベンダーの柔らかなグラデーション背景を設定。
+      ========================================================================
+    -->
+    <div id="webgl-bg-container" class="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[radial-gradient(ellipse_at_top_left,_#f0f9ff_0%,_#f5f3ff_48%,_#fffbeb_100%)]"></div>
+
+    <!-- 
+      ========================================================================
+      2. 前景コンテンツ（オーバーレイの例）
+      明るいガラスモーフィズム（すりガラス風）で背景のパステルオーブが透けて見えます。
+      ========================================================================
+    -->
+    <div class="relative z-10 min-h-screen flex flex-col justify-between px-6 py-8 md:px-12 md:py-10">
+        
+        <!-- ヘッダーナビゲーション例 -->
+        <header class="flex items-center justify-between max-w-6xl w-full mx-auto">
+            <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.65)] animate-pulse"></span>
+                <span class="text-sm font-semibold tracking-widest uppercase text-slate-700">Lumina / Studio</span>
+            </div>
+            <nav class="hidden sm:flex items-center gap-8 text-xs font-medium tracking-wider uppercase text-slate-500">
+                <a href="#about" class="hover:text-slate-900 transition-colors duration-300">Concept</a>
+                <a href="#works" class="hover:text-slate-900 transition-colors duration-300">Works</a>
+                <a href="#contact" class="hover:text-slate-900 transition-colors duration-300">Contact</a>
+            </nav>
+        </header>
+
+        <!-- メインヒーローセクション -->
+        <main class="max-w-3xl w-full mx-auto my-auto text-center py-20">
+            <div class="inline-block mb-6 px-4 py-1.5 rounded-full border border-white/80 bg-white/60 backdrop-blur-md shadow-[0_2px_15px_rgba(148,163,184,0.12)]">
+                <p class="text-xs font-medium tracking-[0.2em] uppercase text-sky-600">Ambient Light WebGL Experience</p>
+            </div>
+            
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-light tracking-tight text-slate-800 mb-6 leading-[1.15]">
+                光と風に溶け込む、<br class="sm:hidden">
+                <span class="font-normal bg-gradient-to-r from-sky-500 via-indigo-400 to-rose-400 bg-clip-text text-transparent">
+                    柔らかな彩りと余白。
+                </span>
+            </h1>
+            
+            <p class="text-sm sm:text-base md:text-lg text-slate-600 font-normal max-w-xl mx-auto mb-10 leading-relaxed">
+                Three.jsを用いた明るく透明感のあるライトトーンの背景テンプレートです。
+                シャボン玉や水彩のように重なり合うパステルオーブが、画面内をゆったりと漂います。
+            </p>
+
+            <!-- アクションボタン例 -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button id="toggle-speed-btn" class="w-full sm:w-auto px-7 py-3.5 rounded-full bg-white/75 hover:bg-white/95 border border-white backdrop-blur-md text-sm font-medium text-slate-700 transition-all duration-300 shadow-[0_4px_20px_rgba(148,163,184,0.18)] hover:shadow-[0_6px_25px_rgba(56,189,248,0.22)] active:scale-95">
+                    浮遊スピード切替: <span id="speed-label" class="text-sky-600 font-semibold">通常</span>
+                </button>
+                <a href="#details" class="w-full sm:w-auto px-7 py-3.5 rounded-full border border-slate-200/80 bg-white/40 hover:bg-white/70 backdrop-blur-sm text-sm font-medium text-slate-600 hover:text-slate-900 transition-all duration-300">
+                    構成を見る ↓
+                </a>
+            </div>
+        </main>
+
+        <!-- スクロール確認用の明るいガラスモーフィズムカードセクション -->
+        <section id="details" class="max-w-5xl w-full mx-auto pt-12 pb-16">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-6 rounded-2xl border border-white/80 bg-white/55 backdrop-blur-md shadow-[0_8px_30px_rgba(148,163,184,0.12)]">
+                    <div class="w-8 h-8 rounded-lg bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-600 font-semibold text-xs mb-4">01</div>
+                    <h2 class="text-base font-semibold text-slate-800 mb-2">水彩・シャボン玉テクスチャ</h2>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        外部画像を使わず、Canvasで外縁にほのかな輪郭と柔らかなグラデーションを持つテクスチャを動的生成。ライト背景でも白飛びせず綺麗に発色します。
+                    </p>
+                </div>
+                <div class="p-6 rounded-2xl border border-white/80 bg-white/55 backdrop-blur-md shadow-[0_8px_30px_rgba(148,163,184,0.12)]">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-600 font-semibold text-xs mb-4">02</div>
+                    <h2 class="text-base font-semibold text-slate-800 mb-2">パステルカラーの重なり</h2>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        NormalBlendingと絶妙な透過率を組み合わせることで、ペールブルーやパステルピンク、ミントが重なった際に透明感のある混色を生み出します。
+                    </p>
+                </div>
+                <div class="p-6 rounded-2xl border border-white/80 bg-white/55 backdrop-blur-md shadow-[0_8px_30px_rgba(148,163,184,0.12)]">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600 font-semibold text-xs mb-4">03</div>
+                    <h2 class="text-base font-semibold text-slate-800 mb-2">軽やかなすりガラスUI</h2>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        半透明のホワイトカードと <code class="text-sky-600 font-mono">backdrop-blur-md</code> により、背後の柔らかな色彩を透かしながら高い可読性を保ちます。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="max-w-6xl w-full mx-auto text-center sm:text-left flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 border-t border-slate-200/70 pt-6">
+            <p>&copy; 2026 Ambient Light Three.js Template.</p>
+            <p class="mt-2 sm:mt-0">Move cursor or touch to interact subtly</p>
+        </footer>
+    </div>
+
+    <!-- 
+      ========================================================================
+      3. Three.js ライト系背景アニメーションスクリプト
+      ========================================================================
+    -->
+    <script>
+        /**
+         * 水彩の滲みやシャボン玉のような柔らかな球体テクスチャを
+         * メモリ上のCanvasから生成するヘルパー関数（ライト背景用）
+         */
+        function createWatercolorBubbleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            const center = canvas.width / 2;
+            const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+            
+            // 中心はふんわりと淡く、外周に向かって少しだけ色づき、縁で滑らかに消えるグラデーション
+            gradient.addColorStop(0.0, 'rgba(255, 255, 255, 0.85)');
+            gradient.addColorStop(0.45, 'rgba(255, 255, 255, 0.55)');
+            gradient.addColorStop(0.78, 'rgba(255, 255, 255, 0.35)');
+            gradient.addColorStop(0.92, 'rgba(255, 255, 255, 0.12)');
+            gradient.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        /**
+         * 微細な光の塵・きらめき用のソフトテクスチャ
+         */
+        function createSparkleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            const center = canvas.width / 2;
+            const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+            gradient.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.5)');
+            gradient.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // アプリケーション全体の初期化
+        window.onload = function () {
+            try {
+                const container = document.getElementById('webgl-bg-container');
+                if (!container) return;
+
+                // --- 1. シーン・カメラ・レンダラーの基本設定 ---
+                const scene = new THREE.Scene();
+                // 明るい背景に自然に溶け込む淡いミストフォグ
+                scene.fog = new THREE.FogExp2(0xf4f7fb, 0.022);
+
+                const camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    100
+                );
+                camera.position.z = 22;
+
+                // alpha: true により背景を透過させ、CSSのライトグラデーションと重ね合わせる
+                const renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true,
+                    powerPreference: 'high-performance'
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                container.appendChild(renderer.domElement);
+
+                // --- 2. ふわふわ浮遊するパステルオブジェクトの生成 ---
+                const bubbleTexture = createWatercolorBubbleTexture();
+                const sparkleTexture = createSparkleTexture();
+
+                // ライト背景で白飛びせず美しく映えるパステルカラーパレット
+                const palette = [
+                    new THREE.Color('#7dd3fc'), // ペールスカイブルー (Sky 300)
+                    new THREE.Color('#f9a8d4'), // パステルピンク (Pink 300)
+                    new THREE.Color('#c4b5fd'), // ソフトラベンダー (Violet 300)
+                    new THREE.Color('#6ee7b7'), // ミントグリーン (Emerald 300)
+                    new THREE.Color('#fde68a'), // シャンパンゴールド (Amber 200)
+                    new THREE.Color('#a5b4fc')  // ペリウィンクル (Indigo 300)
+                ];
+
+                const floatGroup = new THREE.Group();
+                scene.add(floatGroup);
+
+                // [A] 水彩の滲み・シャボン玉のような柔らかなパステルオーブ
+                const orbs = [];
+                const orbCount = 32;
+
+                for (let i = 0; i < orbCount; i++) {
+                    const color = palette[Math.floor(Math.random() * palette.length)];
+                    const material = new THREE.SpriteMaterial({
+                        map: bubbleTexture,
+                        color: color,
+                        transparent: true,
+                        opacity: Math.random() * 0.28 + 0.16, // 淡く重なり合う透明度
+                        blending: THREE.NormalBlending,       // 白飛びを防ぎ水彩のように色を重ねる
+                        depthWrite: false
+                    });
+
+                    const sprite = new THREE.Sprite(material);
+
+                    const baseX = (Math.random() - 0.5) * 44;
+                    const baseY = (Math.random() - 0.5) * 30;
+                    const baseZ = (Math.random() - 0.5) * 24 - 3;
+                    sprite.position.set(baseX, baseY, baseZ);
+
+                    // 大きめのふんわりしたオーブから中くらいの玉までバリエーション
+                    const scale = Math.random() * 7.5 + 2.8;
+                    sprite.scale.set(scale, scale, 1);
+
+                    floatGroup.add(sprite);
+
+                    orbs.push({
+                        mesh: sprite,
+                        baseX: baseX,
+                        baseY: baseY,
+                        baseZ: baseZ,
+                        baseScale: scale,
+                        speedX: Math.random() * 0.35 + 0.12,
+                        speedY: Math.random() * 0.45 + 0.18,
+                        ampX: Math.random() * 1.6 + 0.6,
+                        ampY: Math.random() * 2.0 + 0.7,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+
+                // [B] 陽だまりの中を舞う微細な光の塵・きらめきパーティクル
+                const particleCount = 260;
+                const particleGeometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const particleBasePositions = new Float32Array(particleCount * 3);
+                const particlePhases = new Float32Array(particleCount);
+                const colors = new Float32Array(particleCount * 3);
+
+                // 粒子用の少し鮮やかなパステル・ゴールド系カラー
+                const sparklePalette = [
+                    new THREE.Color('#38bdf8'), // Sky 400
+                    new THREE.Color('#f472b6'), // Pink 400
+                    new THREE.Color('#fbbf24'), // Amber 400
+                    new THREE.Color('#a78bfa'), // Violet 400
+                    new THREE.Color('#ffffff')  // Pure White
+                ];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    const x = (Math.random() - 0.5) * 50;
+                    const y = (Math.random() - 0.5) * 35;
+                    const z = (Math.random() - 0.5) * 28;
+
+                    positions[i3] = x;
+                    positions[i3 + 1] = y;
+                    positions[i3 + 2] = z;
+
+                    particleBasePositions[i3] = x;
+                    particleBasePositions[i3 + 1] = y;
+                    particleBasePositions[i3 + 2] = z;
+
+                    particlePhases[i] = Math.random() * Math.PI * 2;
+
+                    const c = sparklePalette[Math.floor(Math.random() * sparklePalette.length)];
+                    colors[i3] = c.r;
+                    colors[i3 + 1] = c.g;
+                    colors[i3 + 2] = c.b;
+                }
+
+                particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const particleMaterial = new THREE.PointsMaterial({
+                    size: 0.28,
+                    map: sparkleTexture,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.75,
+                    blending: THREE.NormalBlending,
+                    depthWrite: false
+                });
+
+                const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+                floatGroup.add(particleSystem);
+
+                // --- 3. マウス・タッチによる視差効果（パララックス） ---
+                let targetMouseX = 0;
+                let targetMouseY = 0;
+                let currentMouseX = 0;
+                let currentMouseY = 0;
+
+                function updatePointerTarget(clientX, clientY) {
+                    targetMouseX = (clientX / window.innerWidth) * 2 - 1;
+                    targetMouseY = -(clientY / window.innerHeight) * 2 + 1;
+                }
+
+                window.addEventListener('mousemove', (e) => {
+                    updatePointerTarget(e.clientX, e.clientY);
+                }, { passive: true });
+
+                window.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) {
+                        updatePointerTarget(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                }, { passive: true });
+
+                // --- 4. ウィンドウリサイズ対応 ---
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                });
+
+                // --- 5. インタラクションUI（スピード切替ボタン）の連動 ---
+                let speedMultiplier = 1.0;
+                const speedBtn = document.getElementById('toggle-speed-btn');
+                const speedLabel = document.getElementById('speed-label');
+                
+                if (speedBtn && speedLabel) {
+                    const modes = [
+                        { label: '通常', mult: 1.0 },
+                        { label: 'ゆったり', mult: 0.45 },
+                        { label: '軽やか（速め）', mult: 2.0 }
+                    ];
+                    let currentModeIndex = 0;
+
+                    speedBtn.addEventListener('click', () => {
+                        currentModeIndex = (currentModeIndex + 1) % modes.length;
+                        speedMultiplier = modes[currentModeIndex].mult;
+                        speedLabel.textContent = modes[currentModeIndex].label;
+                    });
+                }
+
+                // --- 6. メインアニメーションループ ---
+                const clock = new THREE.Clock();
+                let elapsedTime = 0;
+
+                function animate() {
+                    requestAnimationFrame(animate);
+
+                    const delta = clock.getDelta();
+                    elapsedTime += delta * speedMultiplier;
+
+                    // パステルオーブのふわふわとした浮遊モーション
+                    for (let i = 0; i < orbs.length; i++) {
+                        const orb = orbs[i];
+                        const t = elapsedTime + orb.phase;
+
+                        orb.mesh.position.x = orb.baseX + Math.sin(t * orb.speedX) * orb.ampX;
+                        orb.mesh.position.y = orb.baseY + Math.cos(t * orb.speedY) * orb.ampY;
+
+                        // シャボン玉のようにわずかに伸縮する呼吸アニメーション
+                        const pulse = 1 + Math.sin(t * 0.75) * 0.07;
+                        orb.mesh.scale.set(orb.baseScale * pulse, orb.baseScale * pulse, 1);
+                    }
+
+                    // 微細パーティクルの浮遊更新
+                    const posAttr = particleGeometry.attributes.position;
+                    for (let i = 0; i < particleCount; i++) {
+                        const i3 = i * 3;
+                        const phase = particlePhases[i];
+                        posAttr.array[i3] = particleBasePositions[i3] + Math.sin(elapsedTime * 0.35 + phase) * 0.7;
+                        posAttr.array[i3 + 1] = particleBasePositions[i3 + 1] + Math.cos(elapsedTime * 0.28 + phase) * 0.9;
+                    }
+                    posAttr.needsUpdate = true;
+
+                    // グループ全体の緩やかな漂い
+                    floatGroup.rotation.z = Math.sin(elapsedTime * 0.07) * 0.035;
+
+                    // マウス位置への滑らかなイージング追従（パララックス）
+                    currentMouseX += (targetMouseX - currentMouseX) * 0.04;
+                    currentMouseY += (targetMouseY - currentMouseY) * 0.04;
+
+                    camera.position.x = currentMouseX * 1.8;
+                    camera.position.y = currentMouseY * 1.2;
+                    camera.lookAt(0, 0, 0);
+
+                    renderer.render(scene, camera);
+                }
+
+                // アニメーション開始
+                animate();
+
+            } catch (error) {
+                console.error('Three.js 背景の初期化中にエラーが発生しました:', error);
+            }
+        };
+    </script>
+</body>
+</html>
